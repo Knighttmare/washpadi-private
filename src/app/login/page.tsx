@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type Mode = "signin" | "signup";
 
@@ -45,18 +47,18 @@ export default function LoginPage() {
         <h1>{mode === "signin" ? "Welcome back" : "Create your account"}</h1>
         <p className="auth-subtitle">{mode === "signin" ? "Sign in to follow your orders and pickup times." : "Create a customer account to keep your laundry orders together."}</p>
         <form className="auth-form" onSubmit={submit}>
-          {mode === "signup" && <label>Full name<input name="name" autoComplete="name" minLength={2} maxLength={100} required placeholder="Your name" /></label>}
-          <label>Email address<input name="email" type="email" autoComplete="email" maxLength={254} required placeholder="you@example.com" /></label>
-          <label>Password<input name="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} minLength={8} maxLength={128} required placeholder="At least 8 characters" /></label>
+          {mode === "signup" && <label>Full name<Input name="name" autoComplete="name" minLength={2} maxLength={100} required placeholder="Your name" /></label>}
+          <label>Email address<Input name="email" type="email" autoComplete="email" maxLength={254} required placeholder="you@example.com" /></label>
+          <label>Password<Input name="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} minLength={8} maxLength={128} required placeholder="At least 8 characters" /></label>
+          {mode === "signin" && <a className="forgot-password-link" href="/forgot-password">Forgot password?</a>}
           {message && <p className="auth-message" role="alert">{message}</p>}
-          <button className="primary-button auth-submit" disabled={busy}>{busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}<span>→</span></button>
+          <Button className="primary-button auth-submit" disabled={busy}>{busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}<span>→</span></Button>
         </form>
         <p className="auth-switch">{mode === "signin" ? "New to WashPadi?" : "Already have an account?"}{" "}
           <button onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setMessage(""); }}>
             {mode === "signin" ? "Create an account" : "Sign in"}
           </button>
         </p>
-        <div className="auth-demo-note"><strong>Class project demo</strong><span>Online payments are simulated. No card details are requested and no real money is charged.</span></div>
         <a className="auth-back" href="/">← Back to WashPadi</a>
       </section>
     </main>

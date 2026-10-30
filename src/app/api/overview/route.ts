@@ -9,7 +9,7 @@ export async function GET() {
     const { rows } = await getDb().query(
       `SELECT COUNT(*)::int AS total_orders,
               COUNT(*) FILTER (WHERE o.status = 'Received')::int AS received,
-              COUNT(*) FILTER (WHERE o.status = 'Washing')::int AS washing,
+              COUNT(*) FILTER (WHERE o.status IN ('Washing', 'Ironing'))::int AS washing,
               COUNT(*) FILTER (WHERE o.status = 'Ready')::int AS ready,
               COALESCE((SELECT SUM(p.amount) FROM payments p JOIN orders po ON po.id = p.order_id
                          JOIN customers pc ON pc.id = po.customer_id

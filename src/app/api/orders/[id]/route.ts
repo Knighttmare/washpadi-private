@@ -1,7 +1,7 @@
 import { getDb } from "@/lib/db";
 import { sendOrderEmail, requireStaff } from "@/lib/orders";
 
-const validStatuses = new Set(["Received", "Washing", "Ready"]);
+const validStatuses = new Set(["Received", "Washing", "Ironing", "Ready", "Delivered"]);
 type QuoteItem = { id?: unknown; price?: unknown };
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -25,12 +25,12 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         `SELECT o.order_number, o.payment_method, c.name AS customer_name, c.email AS customer_email
            FROM orders o JOIN customers c ON c.id = o.customer_id WHERE o.id = $1 FOR UPDATE OF o`, [id]);
       if (!orderRows[0]) { await client.query("ROLLBACK"); return Response.json({ message: "Order not found." }, { status: 404 }); }
-      const { rows: existing } = await client.query<{ id: string }>("SELECT id FROM order_items WHERE order_id = $1", [id]);
+      const { rows: existing } = await client.query<{ id: string; quantity: number }>("SELECT id, quantity FROM order_items WHERE order_id = $1", [id]);
       if (existing.length !== incoming.length || incoming.some((item) => !existing.some((row) => row.id === item.id))) {
         await client.query("ROLLBACK"); return Response.json({ message: "Order items changed. Refresh and try again." }, { status: 409 });
       }
       for (const item of incoming) await client.query("UPDATE order_items SET price = $3 WHERE order_id = $1 AND id = $2", [id, item.id, Number(item.price)]);
-      const total = incoming.reduce((sum, item) => sum + Number(item.price), 0);
+      const total = incoming.reduce((sum, item) => sum + Number(item.price) * Number(existing.find((row) => row.id === item.id)?.quantity ?? 1), 0);
       const status = orderRows[0].payment_method === "Demo online" ? "Paid (demo)" : "Due at pickup";
       await client.query("UPDATE orders SET payment_status = $2, updated_at = NOW() WHERE id = $1", [id, status]);
       await client.query("INSERT INTO payments (order_id, amount, method, status, is_demo) VALUES ($1, $2, $3, $4, TRUE)", [id, total, orderRows[0].payment_method, status]);
@@ -42,7 +42,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   }
 
   if (body.status !== undefined) {
-    if (typeof body.status !== "string" || !validStatuses.has(body.status)) return Response.json({ message: "Choose Received, Washing, or Ready." }, { status: 400 });
+    if (typeof body.status !== "string" || !validStatuses.has(body.status)) return Response.json({ message: "Choose a valid laundry status." }, { status: 400 });
     try {
       const { rows } = await db.query<{ order_number: string; status: string; customer_name: string; customer_email: string }>(
         `UPDATE orders o SET status = $2, updated_at = NOW()

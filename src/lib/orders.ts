@@ -39,8 +39,10 @@ export async function listOrdersForUser(user: AppUser) {
   const customerOnly = user.role === "customer";
   const { rows } = await db.query(
     `SELECT o.id, o.order_number, o.status, o.pickup_at, o.payment_method, o.payment_status,
-            o.created_at, c.name AS customer_name, c.email AS customer_email, c.phone,
-            COALESCE(json_agg(json_build_object('id', i.id, 'tag', i.tag, 'name', i.name, 'service', i.service,
+            o.created_at, o.is_express, o.pickup_slot, o.care_instructions, o.estimated_low, o.estimated_high,
+            c.name AS customer_name, c.email AS customer_email, c.phone,
+            COALESCE(json_agg(json_build_object('id', i.id, 'tag', i.tag, 'name', i.name, 'category', i.category,
+                       'quantity', i.quantity, 'service', i.service, 'careTags', i.care_tags,
                        'price', i.price) ORDER BY i.created_at) FILTER (WHERE i.id IS NOT NULL), '[]') AS items
        FROM orders o JOIN customers c ON c.id = o.customer_id
        LEFT JOIN order_items i ON i.order_id = o.id
